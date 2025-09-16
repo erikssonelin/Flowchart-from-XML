@@ -31,18 +31,27 @@
       .node-title {
         font-size: 14px;
         font-weight: 700;
+        text-align: center;
+        word-wrap: break-word;
+        overflow: hidden;
       }
 
       /* EMPTY text (middle of node) styling */
       .node-text {
         font-size: 12px;
         font-weight: 500;
+        text-align: center;
+        word-wrap: break-word;
+        overflow: hidden;
       }
 
       /* Info text (bottom of node) styling */
       .node-info {
         font-size: 11px;
-        fill: #555;
+        color: #555;
+        text-align: center;
+        word-wrap: break-word;
+        overflow: hidden;
       }
 
       /* Link/connection line styling */
@@ -232,7 +241,7 @@
       console.log("Parsed data:", data);
 
       // Chart configuration constants
-      const nodeWidth = 250;
+      const nodeWidth = 320;
       const nodeHeight = 100;
       const nodePaddingX = 10;
       const nodePaddingY = 10;
@@ -334,20 +343,35 @@
 
         // Title text (top of node)
         nodeEnter
-          .append("text")
+          .append("foreignObject")
+          .attr("x", -nodeWidth / 2 + nodePaddingX)
+          .attr("y", -nodeHeight / 2 + nodePaddingY)
+          .attr("width", nodeWidth - nodePaddingX * 2)
+          .attr("height", nodeHeight - nodePaddingY * 2)
+          .append("xhtml:div")
           .attr("class", "node-title")
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "hanging")
-          .attr("dy", -nodeHeight / 2 + marginY)
           .text((d) => d.data.title || "");
+
+        // EMPTY node-text (in the middle)
+        nodeEnter
+          .append("foreignObject")
+          .attr("x", -nodeWidth / 2 + nodePaddingX)
+          .attr("y", -10)
+          .attr("width", nodeWidth - nodePaddingX * 2)
+          .attr("height", 30)
+          .append("xhtml:div")
+          .attr("class", "node-text")
+          .text((d) => d.data.middle || "");
 
         // Info text (bottom of node)
         nodeEnter
-          .append("text")
+          .append("foreignObject")
+          .attr("x", -nodeWidth / 2 + nodePaddingX)
+          .attr("y", nodeHeight / 2 - marginY - 18)
+          .attr("width", nodeWidth - nodePaddingX * 2)
+          .attr("height", 20)
+          .append("xhtml:div")
           .attr("class", "node-info")
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "ideographic")
-          .attr("dy", nodeHeight / 2 - marginY)
           .text((d) => d.data.info || "");
 
         // Expand/collapse indicator dots
