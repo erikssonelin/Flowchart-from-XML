@@ -1,0 +1,72 @@
+<Result>
+  <Item alias="re_Requirement">
+    <id keyed_name="REQ-000000001 treter">0C9B8D68319140C288B1CE78A0C49D48</id>
+    <item_number>REQ-000000001</item_number>
+    <Relationships>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="Part">
+                <id keyed_name="PRT-0000001">521D184DB1E34DED808CEFECE3F6823F</id>
+                <item_number>PRT-0000001</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_Function">
+                <id keyed_name="FN-00000001 Test">89FB8066CC5C468FA958E245F81FB30C</id>
+                <item_number>FN-00000001</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000002 Show Alarm">0DFC4BE70F66431BA35C145D6641FEAE</id>
+            <item_number>REQ-000000002</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000003 MIAS Capabilitites">E2DFE983276849FC93BDFD68139B479D</id>
+            <item_number>REQ-000000003</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000004 Use case : Show and acknowledge alarm">FC4004266FA04AA680AD930AEBC57BE4</id>
+            <item_number>REQ-000000004</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000005 Acknowledge alarm">E2F6997768EF45A3A65EC99B69864BED</id>
+            <item_number>REQ-000000005</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000006 Inledning">667046C4F14A4265ADBFC70C4A176C16</id>
+            <item_number>REQ-000000006</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+    </Relationships>
+  </Item>
+</Result>

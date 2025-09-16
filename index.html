@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>D3 Engineering Flowchart</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial;
+      }
+
+      /* Chart container styling */
+      #chart {
+        width: 100%;
+        height: 100vh;
+        background: #fafafa;
+      }
+
+      /* Node rectangle styling */
+      .node-rect {
+        fill: #fff;
+        stroke-width: 1.5;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+      }
+
+      /* Title text (top of node) styling */
+      .node-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      /* EMPTY text (middle of node) styling */
+      .node-text {
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      /* Info text (bottom of node) styling */
+      .node-info {
+        font-size: 11px;
+        fill: #555;
+      }
+
+      /* Link/connection line styling */
+      .link {
+        fill: none;
+        stroke: #666;
+        stroke-width: 1.2;
+      }
+
+      /* Hint box styling (bottom left) */
+      .hint {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        background: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chart"></div>
+    <div class="hint">
+      Click a box to expand or collapse its sub-items. Drag to pan and scroll to
+      zoom.
+    </div>
+    <!-- D.js v7 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+      const xmlString = `<Result>
+  <Item alias="re_Requirement">
+    <id keyed_name="REQ-000000001 treter">0C9B8D68319140C288B1CE78A0C49D48</id>
+    <item_number>REQ-000000001</item_number>
+    <Relationships>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="Part">
+                <id keyed_name="PRT-0000001">521D184DB1E34DED808CEFECE3F6823F</id>
+                <item_number>PRT-0000001</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_Function">
+                <id keyed_name="FN-00000001 Test">89FB8066CC5C468FA958E245F81FB30C</id>
+                <item_number>FN-00000001</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000002 Show Alarm">0DFC4BE70F66431BA35C145D6641FEAE</id>
+            <item_number>REQ-000000002</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000003 MIAS Capabilitites">E2DFE983276849FC93BDFD68139B479D</id>
+            <item_number>REQ-000000003</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000004 Use case : Show and acknowledge alarm">FC4004266FA04AA680AD930AEBC57BE4</id>
+            <item_number>REQ-000000004</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000005 Acknowledge alarm">E2F6997768EF45A3A65EC99B69864BED</id>
+            <item_number>REQ-000000005</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement_1">
+            <id keyed_name="REQ-000000006 Inledning">667046C4F14A4265ADBFC70C4A176C16</id>
+            <item_number>REQ-000000006</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+    </Relationships>
+  </Item>
+</Result>
+`;
+
+      // Parse XML string
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+      // Assigns a color to each node type
+      const colorMap = {};
+      const colorPalette = [
+        "#3c91e6", // Blue
+        "#f18f01", // Orange
+        "#e63946", // Red
+        "#6a994e", // Green
+        "#9c6ade", // Purple
+        "#7400b8", // Dark purple
+      ];
+
+      function getColorForType(type) {
+        if (!colorMap[type]) {
+          const index = Object.keys(colorMap).length % colorPalette.length;
+          colorMap[type] = colorPalette[index];
+        }
+        return colorMap[type];
+      }
+
+      // Extract data from XML nodes
+      function parseItem(itemNode) {
+        const titleNode = itemNode.querySelector("id");
+        const infoNode = itemNode.querySelector("item_number");
+        const alias = itemNode.getAttribute("alias") || "";
+
+        // Create the node object
+        const dataNode = {
+          title: titleNode ? titleNode.getAttribute("keyed_name") : "No title",
+          info: infoNode ? infoNode.textContent : "",
+          type: alias,
+          id: titleNode ? titleNode.textContent : "",
+          children: [],
+        };
+
+        // Handle different relationship types specifically
+        const relationships = itemNode.querySelectorAll(
+          ":scope > Relationships > Item"
+        );
+
+        // Process each relationship
+        relationships.forEach((rel) => {
+          const relAlias = rel.getAttribute("alias");
+
+          // !!! For sys_Reqt SolutionElement relationships
+          if (relAlias === "sys_Reqt SolutionElement") {
+            const solutionElement = rel.querySelector(
+              "Relationships > Item[alias='sys_SolutionElement']"
+            );
+            if (solutionElement) {
+              const actualItem = solutionElement.querySelector(
+                "Relationships > Item"
+              );
+              if (actualItem) {
+                dataNode.children.push(parseItem(actualItem));
+              }
+            }
+          }
+          // !!! For re_Requirement_Out_Link relationships
+          else if (relAlias === "re_Requirement_Out_Link") {
+            const requirement = rel.querySelector(
+              "Relationships > Item[alias='re_Requirement_1']"
+            );
+            if (requirement) {
+              dataNode.children.push(parseItem(requirement));
+            }
+          }
+          // For other relationship types, add them as needed
+        });
+
+        return dataNode;
+      }
+
+      // Build root hierarchy from the top-level <Item>
+      const rootItem = xmlDoc.querySelector("Result > Item");
+      const data = parseItem(rootItem);
+
+      // Log the parsed data to console for debugging
+      console.log("Parsed data:", data);
+
+      // Chart configuration constants
+      const nodeWidth = 250;
+      const nodeHeight = 100;
+      const nodePaddingX = 10;
+      const nodePaddingY = 10;
+      const margin = { top: 40, right: 80, bottom: 40, left: 80 };
+
+      // Select chart container and calculate dimensions
+      const container = d3.select("#chart");
+      const width = container.node().clientWidth - margin.left - margin.right;
+      const height = container.node().clientHeight - margin.top - margin.bottom;
+
+      // Create SVG container with zoom capabilities
+      const svg = container
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .call(
+          d3
+            .zoom()
+            .scaleExtent([0.3, 2])
+            .on("zoom", (event) => g.attr("transform", event.transform))
+        )
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // Create group for chart elements
+      const g = svg.append("g");
+
+      // Create D3 hierarchy from parsed data
+      const root = d3.hierarchy(data);
+      root.x0 = height / 2;
+      root.y0 = 0;
+
+      // INACTIVE: Example function for collapsing nodes. To enable initial collapse behavior, uncomment the logic below.
+      function collapseIfNeeded(d) {
+        // if(d.depth && d.children) { d._children = d.children; d._children.forEach(collapseIfNeeded); d.children = null; }
+      }
+
+      // Uncomment logic above and the tree will start fully expanded by default.
+      root.children.forEach(collapseIfNeeded);
+
+      // Configure tree layout
+      const tree = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 80]);
+
+      // Main update function that handles rendering of nodes and links
+      function update(source) {
+        const treeData = tree(root);
+        const nodes = treeData.descendants();
+        const links = treeData.links();
+
+        // Normalize for fixed-depth spacing
+        nodes.forEach((d) => {
+          d.y = d.depth * (nodeWidth + 80);
+        });
+
+        // NODES
+        const marginY = 14;
+
+        // Bind nodes to DOM elements
+        const node = g
+          .selectAll("g.node")
+          .data(nodes, (d) => d.data.id || d.data.title + "-" + d.depth);
+
+        // Enter selection: create new nodes
+        const nodeEnter = node
+          .enter()
+          .append("g")
+          .attr(
+            "class",
+            (d) =>
+              `node node-type-${(d.data.type || "default").replace(
+                /\s+/g,
+                "_"
+              )}`
+          )
+          .attr("transform", (d) => `translate(${source.y0},${source.x0})`)
+          .on("click", (event, d) => {
+            if (!d.children && !d._children) {
+              d.x0 = d.x;
+              d.y0 = d.y;
+              return;
+            }
+            toggle(d);
+            update(d);
+          });
+
+        // Rectangle background for nodes
+        nodeEnter
+          .append("rect")
+          .attr("class", "node-rect")
+          .attr("width", nodeWidth)
+          .attr("height", nodeHeight)
+          .attr("rx", 12)
+          .attr("ry", 12)
+          .attr("x", -nodeWidth / 2)
+          .attr("y", -nodeHeight / 2)
+          .style("stroke", (d) =>
+            d.depth === 0 ? "#555" : getColorForType(d.data.type)
+          );
+
+        // Title text (top of node)
+        nodeEnter
+          .append("text")
+          .attr("class", "node-title")
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "hanging")
+          .attr("dy", -nodeHeight / 2 + marginY)
+          .text((d) => d.data.title || "");
+
+        // Info text (bottom of node)
+        nodeEnter
+          .append("text")
+          .attr("class", "node-info")
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "ideographic")
+          .attr("dy", nodeHeight / 2 - marginY)
+          .text((d) => d.data.info || "");
+
+        // Expand/collapse indicator dots
+        const dotsGroup = nodeEnter.append("g").attr("class", "edge-dots");
+
+        // Collapse/expand circle
+        dotsGroup
+          .append("circle")
+          .attr("class", "dot collapse")
+          .attr("cx", nodeWidth / 2 - 21)
+          .attr("cy", nodeHeight / 2)
+          .attr("r", 7)
+          .style("fill", "#666")
+          .style("stroke", "#fff")
+          .style("stroke-width", 2)
+          .style("cursor", "pointer")
+          .style("display", (d) => (d.children || d._children ? null : "none"))
+          .on("click", (event, d) => {
+            event.stopPropagation();
+            toggle(d);
+            update(d);
+          });
+
+        // Plus/minus symbol inside circle
+        dotsGroup
+          .append("text")
+          .attr("class", "collapse-symbol")
+          .attr("x", nodeWidth / 2 - 21)
+          .attr("y", nodeHeight / 2 + 0)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("fill", "#fff")
+          .style("font-weight", "700")
+          .style("font-size", "14px")
+          .style("pointer-events", "none")
+          .style("display", (d) => (d.children || d._children ? null : "none"))
+          .text((d) => (d.children ? "-" : "+"));
+
+        // Merge new nodes with existing ones and apply transitions
+        const nodeUpdate = nodeEnter.merge(node);
+
+        // Animate node movement
+        nodeUpdate
+          .transition()
+          .duration(350)
+          .attr("transform", (d) => `translate(${d.y},${d.x})`);
+
+        // Set cursor style based on whether node is expandable
+        nodeUpdate
+          .select("rect")
+          .attr("cursor", (d) =>
+            d.children || d._children ? "pointer" : "default"
+          );
+
+        // Update collapse indicator visibility
+        nodeUpdate
+          .select(".dot.collapse")
+          .style("display", (d) => (d.children || d._children ? null : "none"))
+          .style("fill", (d) => (d.children || d._children ? "#666" : "#666"));
+
+        // Update collapse symbol text
+        nodeUpdate
+          .select(".collapse-symbol")
+          .text((d) => (d.children ? "-" : "+"))
+          .style("display", (d) => (d.children || d._children ? null : "none"));
+
+        // Exit selection: remove old nodes
+        const nodeExit = node.exit();
+        nodeExit
+          .transition()
+          .duration(250)
+          .attr("transform", `translate(${source.y},${source.x})`)
+          .remove();
+
+        // LINKS
+        const link = g
+          .selectAll("path.link")
+          .data(
+            links,
+            (d) =>
+              d.target.data.id || d.target.data.title + "-" + d.target.depth
+          );
+
+        // Enter selection: create new links
+        const linkEnter = link
+          .enter()
+          .insert("path", "g")
+          .attr("class", "link")
+          .attr("d", (d) => {
+            const o = { x: source.x0, y: source.y0 };
+            return diagonal({ source: o, target: o });
+          });
+
+        // Merge new links with existing ones and apply transitions
+        const linkUpdate = linkEnter.merge(link);
+        linkUpdate.transition().duration(350).attr("d", diagonal);
+
+        // Exit selection: remove old links
+        link
+          .exit()
+          .transition()
+          .duration(250)
+          .attr("d", (d) => {
+            const o = { x: source.x, y: source.y };
+            return diagonal({ source: o, target: o });
+          })
+          .remove();
+
+        // Store current positions for future transitions
+        nodes.forEach((d) => {
+          d.x0 = d.x;
+          d.y0 = d.y;
+        });
+      }
+
+      // Diagonal path generator for links (left-to-right orientation)
+      const diagonal = d3
+        .linkHorizontal()
+        .x((d) => d.y)
+        .y((d) => d.x);
+
+      // Toggles a node's expanded/collapsed state
+      function toggle(d) {
+        if (d.children) {
+          d._children = d.children;
+          d.children = null;
+        } else {
+          d.children = d._children;
+          d._children = null;
+        }
+      }
+
+      // Initial render of the tree
+      update(root);
+
+      // Handle window resize events
+      window.addEventListener("resize", () => {
+        const newW = container.node().clientWidth - margin.left - margin.right;
+        const newH = container.node().clientHeight - margin.top - margin.bottom;
+        d3.select("svg")
+          .attr("width", newW + margin.left + margin.right)
+          .attr("height", newH + margin.top + margin.bottom);
+      });
+    </script>
+  </body>
+</html>
