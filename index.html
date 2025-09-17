@@ -181,53 +181,120 @@
       }
 
       // Extract data from XML nodes
-      function parseItem(itemNode) {
-        const titleNode = itemNode.querySelector("id");
-        const infoNode = itemNode.querySelector("item_number");
+      function parseItem(itemNode, visitedIds = new Set()) {
+        const idNode = itemNode.querySelector("id");
+        // Only create nodes for items with keyed_name
+        if (!idNode || !idNode.getAttribute("keyed_name")) return null;
+
+        const itemId = idNode.textContent;
+        // Check if we've already processed this node to avoid duplicates
+        if (visitedIds.has(itemId)) return null;
+        visitedIds.add(itemId);
+
+        const itemNumberNode = itemNode.querySelector("item_number");
         const alias = itemNode.getAttribute("alias") || "";
 
         // Create the node object
         const dataNode = {
-          title: titleNode ? titleNode.getAttribute("keyed_name") : "No title",
-          info: infoNode ? infoNode.textContent : "",
+          title: idNode.getAttribute("keyed_name"),
+          info: itemNumberNode ? itemNumberNode.textContent : "",
           type: alias,
-          id: titleNode ? titleNode.textContent : "",
+          id: itemId,
           children: [],
         };
 
-        // Handle different relationship types specifically
-        const relationships = itemNode.querySelectorAll(
-          ":scope > Relationships > Item"
-        );
+        // Find all relationship items and process only those with keyed_name
+        const relationshipSections = itemNode.querySelectorAll("Relationships");
 
-        // Process each relationship
-        relationships.forEach((rel) => {
-          const relAlias = rel.getAttribute("alias");
+        relationshipSections.forEach((relSection) => {
+          const relationshipItems =
+            relSection.querySelectorAll(":scope > Item");
 
-          // !!! For sys_Reqt SolutionElement relationships
-          if (relAlias === "sys_Reqt SolutionElement") {
-            const solutionElement = rel.querySelector(
-              "Relationships > Item[alias='sys_SolutionElement']"
+          relationshipItems.forEach((relItem) => {
+            // Check if this relationship item has content nodes with keyed_name
+            const nestedRelationships = relItem.querySelectorAll(
+              ":scope > Relationships"
             );
-            if (solutionElement) {
-              const actualItem = solutionElement.querySelector(
-                "Relationships > Item"
-              );
-              if (actualItem) {
-                dataNode.children.push(parseItem(actualItem));
+
+            if (nestedRelationships.length > 0) {
+              // This is a relationship container - look for content nodes in its relationships
+              nestedRelationships.forEach((nestedRel) => {
+                const contentItems =
+                  nestedRel.querySelectorAll(":scope > Item");
+                contentItems.forEach((contentItem) => {
+                  // Check if this content item has further nesting
+                  const deepNestedRelationships = contentItem.querySelectorAll(
+                    ":scope > Relationships"
+                  );
+
+                  if (deepNestedRelationships.length > 0) {
+                    // Handle double-nested relationships (for Parts and Functions)
+                    deepNestedRelationships.forEach((deepNestedRel) => {
+                      const deepContentItems =
+                        deepNestedRel.querySelectorAll(":scope > Item");
+                      deepContentItems.forEach((deepContentItem) => {
+                        const idNode = deepContentItem.querySelector("id");
+                        if (idNode && idNode.getAttribute("keyed_name")) {
+                          const itemId = idNode.textContent;
+                          if (!visitedIds.has(itemId)) {
+                            visitedIds.add(itemId);
+
+                            const itemNumberNode =
+                              deepContentItem.querySelector("item_number");
+                            const alias =
+                              deepContentItem.getAttribute("alias") || "";
+
+                            const childNode = {
+                              title: idNode.getAttribute("keyed_name"),
+                              info: itemNumberNode
+                                ? itemNumberNode.textContent
+                                : "",
+                              type: alias,
+                              id: itemId,
+                              children: [],
+                            };
+
+                            dataNode.children.push(childNode);
+                          }
+                        }
+                      });
+                    });
+                  } else {
+                    // Handle single-nested relationships (for Requirements)
+                    const idNode = contentItem.querySelector("id");
+                    if (idNode && idNode.getAttribute("keyed_name")) {
+                      const itemId = idNode.textContent;
+                      if (!visitedIds.has(itemId)) {
+                        visitedIds.add(itemId);
+
+                        const itemNumberNode =
+                          contentItem.querySelector("item_number");
+                        const alias = contentItem.getAttribute("alias") || "";
+
+                        const childNode = {
+                          title: idNode.getAttribute("keyed_name"),
+                          info: itemNumberNode
+                            ? itemNumberNode.textContent
+                            : "",
+                          type: alias,
+                          id: itemId,
+                          children: [],
+                        };
+
+                        dataNode.children.push(childNode);
+                      }
+                    }
+                  }
+                });
+              });
+            } else {
+              // This might be a direct content node
+              const childNode = parseItem(relItem, visitedIds);
+              if (childNode) {
+                dataNode.children.push(childNode);
               }
             }
-          }
-          // !!! For re_Requirement_Out_Link relationships
-          else if (relAlias === "re_Requirement_Out_Link") {
-            const requirement = rel.querySelector(
-              "Relationships > Item[alias='re_Requirement_1']"
-            );
-            if (requirement) {
-              dataNode.children.push(parseItem(requirement));
-            }
-          }
-          // For other relationship types, add them as needed
+          });
         });
 
         return dataNode;
