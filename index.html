@@ -18,6 +18,33 @@
         width: 100%;
         height: 100vh;
         background: #fafafa;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Controls */
+      .controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 100;
+        display: flex;
+        gap: 8px;
+      }
+
+      .control-btn {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+      }
+
+      .control-btn:hover {
+        background: #f0f0f0;
       }
 
       /* Node rectangle styling */
@@ -25,6 +52,11 @@
         fill: #fff;
         stroke-width: 1.5;
         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+        transition: all 0.2s;
+      }
+
+      .node-rect:hover {
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
       }
 
       /* Title text (top of node) styling */
@@ -61,6 +93,10 @@
         stroke-width: 1.2;
       }
 
+      .link:hover {
+        stroke-width: 2;
+      }
+
       /* Hint box styling (bottom left) */
       .hint {
         position: fixed;
@@ -71,6 +107,23 @@
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         font-size: 13px;
+        z-index: 100;
+      }
+
+      /* Highlighted node */
+      .node-highlighted .node-rect {
+        stroke-width: 3px;
+      }
+
+      /* Faded node */
+      .node-faded {
+        opacity: 0.3;
+      }
+
+      /* Link highlight */
+      .link-highlighted {
+        stroke: #e63946;
+        stroke-width: 2.5;
       }
 
       /* Hull groups container styling*/
@@ -82,12 +135,18 @@
     </style>
   </head>
   <body>
-    <div id="chart"></div>
+    <div id="chart">
+      <div class="controls">
+        <button class="control-btn" id="expand-all">Expand All</button>
+        <button class="control-btn" id="collapse-all">Collapse All</button>
+        <button class="control-btn" id="reset-view">Reset View</button>
+      </div>
+    </div>
     <div class="hint">
       Click a box to expand or collapse its sub-items. Drag to pan and scroll to
       zoom.
     </div>
-    <!-- D.js v7 -->
+    <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
       const xmlString = `<Result>
@@ -188,56 +247,124 @@
       }
 
       // Extract data from XML nodes
-      function parseItem(itemNode) {
-        const titleNode = itemNode.querySelector("id");
-        const infoNode = itemNode.querySelector("item_number");
+      function parseItem(itemNode, visitedIds = new Set()) {
+        const idNode = itemNode.querySelector("id");
+        // Only create nodes for items with keyed_name
+        if (!idNode || !idNode.getAttribute("keyed_name")) return null;
+
+        const itemId = idNode.textContent;
+        // Check if we've already processed this node to avoid duplicates
+        if (visitedIds.has(itemId)) return null;
+        visitedIds.add(itemId);
+
+        const itemNumberNode = itemNode.querySelector("item_number");
         const alias = itemNode.getAttribute("alias") || "";
 
         // Create the node object
         const dataNode = {
-          title: titleNode ? titleNode.getAttribute("keyed_name") : "No title",
-          info: infoNode ? infoNode.textContent : "",
+          title: idNode.getAttribute("keyed_name"),
+          info: itemNumberNode ? itemNumberNode.textContent : "",
           type: alias,
-          id: titleNode ? titleNode.textContent : "",
+          id: itemId,
           children: [],
           hasExtraNesting: false, // NEW: Flag to indicate if this node has extra nesting
         };
 
-        // Handle different relationship types specifically
-        const relationships = itemNode.querySelectorAll(
-          ":scope > Relationships > Item"
-        );
+        // Find all relationship items and process only those with keyed_name
+        const relationshipSections = itemNode.querySelectorAll("Relationships");
 
-        // Process each relationship
-        relationships.forEach((rel) => {
-          const relAlias = rel.getAttribute("alias");
+        relationshipSections.forEach((relSection) => {
+          const relationshipItems =
+            relSection.querySelectorAll(":scope > Item");
 
-          // !!! For sys_Reqt SolutionElement relationships
-          if (relAlias === "sys_Reqt SolutionElement") {
-            const solutionElement = rel.querySelector(
-              "Relationships > Item[alias='sys_SolutionElement']"
+          relationshipItems.forEach((relItem) => {
+            // Check if this relationship item has content nodes with keyed_name
+            const nestedRelationships = relItem.querySelectorAll(
+              ":scope > Relationships"
             );
-            if (solutionElement) {
-              const actualItem = solutionElement.querySelector(
-                "Relationships > Item"
-              );
-              if (actualItem) {
-                const childNode = parseItem(actualItem);
-                childNode.hasExtraNesting = true; // NEW: Mark this child as having extra nesting
+
+            if (nestedRelationships.length > 0) {
+              // This is a relationship container - look for content nodes in its relationships
+              nestedRelationships.forEach((nestedRel) => {
+                const contentItems =
+                  nestedRel.querySelectorAll(":scope > Item");
+                contentItems.forEach((contentItem) => {
+                  // Check if this content item has further nesting
+                  const deepNestedRelationships = contentItem.querySelectorAll(
+                    ":scope > Relationships"
+                  );
+
+                  if (deepNestedRelationships.length > 0) {
+                    // Handle double-nested relationships (for Parts and Functions)
+                    deepNestedRelationships.forEach((deepNestedRel) => {
+                      const deepContentItems =
+                        deepNestedRel.querySelectorAll(":scope > Item");
+                      deepContentItems.forEach((deepContentItem) => {
+                        const idNode = deepContentItem.querySelector("id");
+                        if (idNode && idNode.getAttribute("keyed_name")) {
+                          const itemId = idNode.textContent;
+                          if (!visitedIds.has(itemId)) {
+                            visitedIds.add(itemId);
+
+                            const itemNumberNode =
+                              deepContentItem.querySelector("item_number");
+                            const alias =
+                              deepContentItem.getAttribute("alias") || "";
+
+                            const childNode = {
+                              title: idNode.getAttribute("keyed_name"),
+                              info: itemNumberNode
+                                ? itemNumberNode.textContent
+                                : "",
+                              type: alias,
+                              id: itemId,
+                              children: [],
+                              hasExtraNesting: false,
+                            };
+
+                            childNode.hasExtraNesting = true; // NEW: Mark this child as having extra nesting
+                            dataNode.children.push(childNode);
+                          }
+                        }
+                      });
+                    });
+                  } else {
+                    // Handle single-nested relationships (for Requirements)
+                    const idNode = contentItem.querySelector("id");
+                    if (idNode && idNode.getAttribute("keyed_name")) {
+                      const itemId = idNode.textContent;
+                      if (!visitedIds.has(itemId)) {
+                        visitedIds.add(itemId);
+
+                        const itemNumberNode =
+                          contentItem.querySelector("item_number");
+                        const alias = contentItem.getAttribute("alias") || "";
+
+                        const childNode = {
+                          title: idNode.getAttribute("keyed_name"),
+                          info: itemNumberNode
+                            ? itemNumberNode.textContent
+                            : "",
+                          type: alias,
+                          id: itemId,
+                          children: [],
+                          hasExtraNesting: false,
+                        };
+
+                        dataNode.children.push(childNode);
+                      }
+                    }
+                  }
+                });
+              });
+            } else {
+              // This might be a direct content node
+              const childNode = parseItem(relItem, visitedIds);
+              if (childNode) {
                 dataNode.children.push(childNode);
               }
             }
-          }
-          // !!! For re_Requirement_Out_Link relationships
-          else if (relAlias === "re_Requirement_Out_Link") {
-            const requirement = rel.querySelector(
-              "Relationships > Item[alias='re_Requirement_1']"
-            );
-            if (requirement) {
-              dataNode.children.push(parseItem(requirement));
-            }
-          }
-          // For other relationship types, add them as needed
+          });
         });
 
         return dataNode;
@@ -295,6 +422,9 @@
       // Configure tree layout
       const tree = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 80]);
 
+      // Store the current transform for reset functionality
+      let currentTransform = d3.zoomIdentity;
+
       // Main update function that handles rendering of nodes and links
       function update(source) {
         const treeData = tree(root);
@@ -306,13 +436,13 @@
           d.y = d.depth * (nodeWidth + 80);
         });
 
-        // Group nodes that have extra nesting (connection point structure)
+        // NEW: Group nodes that have extra nesting (connection point structure)
         const groups = d3.group(nodes, (d) => {
           // Only create hull groups for nodes with extra nesting
-          return d.data.hasExtraNesting ? d.parent.data.id : null; // CHANGED: Only group nodes with extra nesting
+          return d.data.hasExtraNesting ? d.parent.data.id : null;
         });
 
-        // Remove null groups (nodes without extra nesting) - NEW
+        // Remove null groups (nodes without extra nesting)
         groups.delete(null);
 
         // Prepare hull groups container
@@ -573,8 +703,49 @@
         }
       }
 
+      // Expand all nodes
+      function expandAll() {
+        root.each((d) => {
+          if (d._children) {
+            d.children = d._children;
+            d._children = null;
+          }
+        });
+        update(root);
+      }
+
+      // Collapse all nodes except root
+      function collapseAll() {
+        root.each((d) => {
+          if (d !== root && d.children) {
+            d._children = d.children;
+            d.children = null;
+          }
+        });
+        update(root);
+      }
+
+      // Reset zoom and pan
+      function resetView() {
+        svg
+          .transition()
+          .duration(750)
+          .call(d3.zoom().transform, d3.zoomIdentity);
+      }
+
       // Initial render of the tree
       update(root);
+
+      // Add control button event listeners
+      document
+        .getElementById("expand-all")
+        .addEventListener("click", expandAll);
+      document
+        .getElementById("collapse-all")
+        .addEventListener("click", collapseAll);
+      document
+        .getElementById("reset-view")
+        .addEventListener("click", resetView);
 
       // Handle window resize events
       window.addEventListener("resize", () => {
