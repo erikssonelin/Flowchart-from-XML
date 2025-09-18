@@ -72,6 +72,13 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         font-size: 13px;
       }
+
+      /* Hull groups container styling*/
+      path.hull {
+        fill-opacity: 0.8;
+        stroke-opacity: 0.8;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -193,6 +200,7 @@
           type: alias,
           id: titleNode ? titleNode.textContent : "",
           children: [],
+          hasExtraNesting: false, // NEW: Flag to indicate if this node has extra nesting
         };
 
         // Handle different relationship types specifically
@@ -214,7 +222,9 @@
                 "Relationships > Item"
               );
               if (actualItem) {
-                dataNode.children.push(parseItem(actualItem));
+                const childNode = parseItem(actualItem);
+                childNode.hasExtraNesting = true; // NEW: Mark this child as having extra nesting
+                dataNode.children.push(childNode);
               }
             }
           }
@@ -295,6 +305,65 @@
         nodes.forEach((d) => {
           d.y = d.depth * (nodeWidth + 80);
         });
+
+        // Group nodes that have extra nesting (connection point structure)
+        const groups = d3.group(nodes, (d) => {
+          // Only create hull groups for nodes with extra nesting
+          return d.data.hasExtraNesting ? d.parent.data.id : null; // CHANGED: Only group nodes with extra nesting
+        });
+
+        // Remove null groups (nodes without extra nesting) - NEW
+        groups.delete(null);
+
+        // Prepare hull groups container
+        let hullGroup = g
+          .selectAll("path.hull")
+          .data(Array.from(groups), (d) => d[0]);
+
+        // Enter selection: add new hull paths
+        hullGroup
+          .enter()
+          .append("path")
+          .attr("class", "hull")
+          .attr("fill", "#d3d3d3")
+          .attr("stroke", "#999")
+          .attr("stroke-width", 2)
+          .attr("opacity", 0.3)
+          .merge(hullGroup)
+          .attr("d", ([key, groupNodes]) => {
+            const points = groupNodes
+              .map((d) => [d.y - nodeWidth / 2, d.x - nodeHeight / 2])
+              .concat(
+                groupNodes.map((d) => [
+                  d.y + nodeWidth / 2,
+                  d.x - nodeHeight / 2,
+                ])
+              )
+              .concat(
+                groupNodes.map((d) => [
+                  d.y + nodeWidth / 2,
+                  d.x + nodeHeight / 2,
+                ])
+              )
+              .concat(
+                groupNodes.map((d) => [
+                  d.y - nodeWidth / 2,
+                  d.x + nodeHeight / 2,
+                ])
+              );
+
+            // Add some padding by expanding points outward - optional
+            const padding = 20;
+            const hullPoints = d3.polygonHull(points);
+            if (!hullPoints) return null;
+
+            // Create smooth polygon path
+            return (
+              "M" + hullPoints.map((p) => p[0] + "," + p[1]).join("L") + "Z"
+            );
+          });
+
+        hullGroup.exit().remove();
 
         // NODES
         const marginY = 14;
