@@ -22,31 +22,6 @@
         overflow: hidden;
       }
 
-      /* Controls */
-      .controls {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 100;
-        display: flex;
-        gap: 8px;
-      }
-
-      .control-btn {
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 13px;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s;
-      }
-
-      .control-btn:hover {
-        background: #f0f0f0;
-      }
-
       /* Node rectangle styling */
       .node-rect {
         fill: #fff;
@@ -127,20 +102,19 @@
       }
 
       /* Hull groups container styling*/
+
       path.hull {
-        fill-opacity: 0.8;
+        fill-opacity: 0.15;
         stroke-opacity: 0.8;
+        stroke-width: 1.5;
+        stroke-dasharray: none;
         pointer-events: none;
       }
     </style>
   </head>
   <body>
     <div id="chart">
-      <div class="controls">
-        <button class="control-btn" id="expand-all">Expand All</button>
-        <button class="control-btn" id="collapse-all">Collapse All</button>
-        <button class="control-btn" id="reset-view">Reset View</button>
-      </div>
+      <div class="controls"></div>
     </div>
     <div class="hint">
       Click a box to expand or collapse its sub-items. Drag to pan and scroll to
@@ -267,7 +241,7 @@
           type: alias,
           id: itemId,
           children: [],
-          hasExtraNesting: false, // NEW: Flag to indicate if this node has extra nesting
+          hasExtraNesting: false,
         };
 
         // Find all relationship items and process only those with keyed_name
@@ -284,18 +258,16 @@
             );
 
             if (nestedRelationships.length > 0) {
-              // This is a relationship container - look for content nodes in its relationships
               nestedRelationships.forEach((nestedRel) => {
                 const contentItems =
                   nestedRel.querySelectorAll(":scope > Item");
                 contentItems.forEach((contentItem) => {
-                  // Check if this content item has further nesting
                   const deepNestedRelationships = contentItem.querySelectorAll(
                     ":scope > Relationships"
                   );
 
                   if (deepNestedRelationships.length > 0) {
-                    // Handle double-nested relationships (for Parts and Functions)
+                    // Handle double-nested relationships
                     deepNestedRelationships.forEach((deepNestedRel) => {
                       const deepContentItems =
                         deepNestedRel.querySelectorAll(":scope > Item");
@@ -321,14 +293,14 @@
                               children: [],
                               hasExtraNesting: false,
                             };
-                            childNode.hasExtraNesting = true; // NEW: Mark this child as having extra nesting
+                            childNode.hasExtraNesting = true;
                             dataNode.children.push(childNode);
                           }
                         }
                       });
                     });
                   } else {
-                    // Handle single-nested relationships (for Requirements)
+                    // Handle single-nested relationships
                     const idNode = contentItem.querySelector("id");
                     if (idNode && idNode.getAttribute("keyed_name")) {
                       const itemId = idNode.textContent;
@@ -357,7 +329,6 @@
                 });
               });
             } else {
-              // This might be a direct content node
               const childNode = parseItem(relItem, visitedIds);
               if (childNode) {
                 dataNode.children.push(childNode);
@@ -454,42 +425,34 @@
           .enter()
           .append("path")
           .attr("class", "hull")
-          .attr("fill", "#d3d3d3")
-          .attr("stroke", "#999")
+          .attr("fill", "#a9a9a9")
+          .attr("stroke", "#666")
           .attr("stroke-width", 2)
-          .attr("opacity", 0.3)
+          .attr("opacity", 0.5)
           .merge(hullGroup)
           .attr("d", ([key, groupNodes]) => {
-            const points = groupNodes
-              .map((d) => [d.y - nodeWidth / 2, d.x - nodeHeight / 2])
-              .concat(
-                groupNodes.map((d) => [
-                  d.y + nodeWidth / 2,
-                  d.x - nodeHeight / 2,
-                ])
-              )
-              .concat(
-                groupNodes.map((d) => [
-                  d.y + nodeWidth / 2,
-                  d.x + nodeHeight / 2,
-                ])
-              )
-              .concat(
-                groupNodes.map((d) => [
-                  d.y - nodeWidth / 2,
-                  d.x + nodeHeight / 2,
-                ])
-              );
+            const xCoords = groupNodes.map((d) => d.x);
+            const yCoords = groupNodes.map((d) => d.y);
 
-            // Add some padding by expanding points outward - optional
-            const padding = 20;
-            const hullPoints = d3.polygonHull(points);
-            if (!hullPoints) return null;
+            const minX = Math.min(...xCoords) - nodeHeight / 2 - 15;
+            const maxX = Math.max(...xCoords) + nodeHeight / 2 + 15;
+            const minY = Math.min(...yCoords) - nodeWidth / 2 - 15;
+            const maxY = Math.max(...yCoords) + nodeWidth / 2 + 15;
 
-            // Create smooth polygon path
-            return (
-              "M" + hullPoints.map((p) => p[0] + "," + p[1]).join("L") + "Z"
-            );
+            // Create a rounded rectangle path
+            const radius = 12;
+            return `
+              M ${minY + radius},${minX}
+              L ${maxY - radius},${minX}
+              Q ${maxY},${minX} ${maxY},${minX + radius}
+              L ${maxY},${maxX - radius}
+              Q ${maxY},${maxX} ${maxY - radius},${maxX}
+              L ${minY + radius},${maxX}
+              Q ${minY},${maxX} ${minY},${maxX - radius}
+              L ${minY},${minX + radius}
+              Q ${minY},${minX} ${minY + radius},${minX}
+              Z
+            `;
           });
 
         hullGroup.exit().remove();
@@ -734,17 +697,6 @@
 
       // Initial render of the tree
       update(root);
-
-      // Add control button event listeners
-      document
-        .getElementById("expand-all")
-        .addEventListener("click", expandAll);
-      document
-        .getElementById("collapse-all")
-        .addEventListener("click", collapseAll);
-      document
-        .getElementById("reset-view")
-        .addEventListener("click", resetView);
 
       // Handle window resize events
       window.addEventListener("resize", () => {
