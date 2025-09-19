@@ -1,0 +1,34 @@
+Name Type Item Number Revision Relationship
+name/req_name/reqdoc_title/id keyed_name/item_number
+
+
+My flowchart gets the information from an xml, it's dynamic so I can't hardcode most things, but I know what information the nodes should show. Right now none have (major_rev) but will in the future. 
+
+The information I want from the xml is: (item_ number) (name) (req_name) (reqdoc_title) (id keyed_name) (Item alias)*1 (Item alias)*2 (major_rev)
+
+(Item alias)*1 is the one closest to the node, it's Type. (Item alias)*2 is the next one, it's Relationship.
+
+The structure of the xml is root (id keyed_name) -> (maybe some Item aliases, ship these!) -> relationship (Item alias)*2 -> type (Item alias)*1 -> node (id keyed_name) -> item number (item_ number) -> revision (major_rev) 
+
+So the nodes appearance should be from the top to the bottom (everything centered): 
+
+(Item alias)*
+(id keyed_name) 
+
+Item Number Revision
+(item_number) (major_rev)
+
+so the (item_number) should be underneath the string Item Number,
+and (_) under the string Revision.
+
+
+      // Color palette and mapping
+      const colorMap = {};
+      const colorPalette = [
+        "#3c91e6", // Blue
+        "#f18f01", // Orange
+        "#e63946", // Red
+        "#6a994e", // Green
+        "#9c6ade", // Purple
+        "#7400b8", // Dark purple
+      ];

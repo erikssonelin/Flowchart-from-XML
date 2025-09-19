@@ -1,0 +1,747 @@
+Stylesheet Kalai: 
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" version="1.0" exclude-result-prefixes="SOAP-ENV">
+	   
+	<xsl:output method="html" indent="yes" omit-xml-declaration="yes"/>
+	   
+	    <xsl:template match="/">
+		        <html>
+			        <head>
+				            <title>Requirement Visualization</title>
+				            <script src="https://d3js.org/d3.v7.min.js"/>
+				            <style>
+					                body {
+					                    font-family: 'Segoe UI', Arial, sans-serif;
+					                    background: #f8fafc;
+					                    margin: 0;
+					                    padding: 20px;
+					                }
+					                #dashboard {
+					                    display: flex;
+					                    flex-direction: column;
+					                    gap: 20px;
+					                }
+					                #controls {
+					                    display: flex;
+					                    gap: 20px;
+					                    align-items: center;
+					                    margin-bottom: 15px;
+					                }
+					                #view-selector {
+					                    padding: 8px 12px;
+					                    border-radius: 4px;
+					                    border: 1px solid #ccc;
+					                    font-size: 14px;
+					                }
+					                #container {
+					                    display: flex;
+					                    gap: 20px;
+					                    width: 100%;
+					                }
+					                #chart-container, #table-container {
+					                    flex: 1;
+					                    border: 1px solid #ddd;
+					                    border-radius: 5px;
+					                    padding: 15px;
+					                    background: white;
+					                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+					                    min-height: 500px;
+					                }
+					                #tree-vis {
+					                    width: 100%;
+					                    height: 600px;
+					                    overflow: hidden;
+					                }
+					                #data-table {
+					                    width: 100%;
+					                    border-collapse: collapse;
+					                    margin-top: 10px;
+					                }
+					                #data-table th, #data-table td {
+					                    border: 1px solid #ddd;
+					                    padding: 8px 12px;
+					                    text-align: left;
+					                }
+					                #data-table th {
+					                    background-color: #f2f2f2;
+					                    position: sticky;
+					                    top: 0;
+					                }
+					                #data-table tr:nth-child(even) {
+					                    background-color: #f9f9f9;
+					                }
+					                #data-table tr:hover {
+					                    background-color: #f1f1f1;
+					                }
+					                .node {
+					                    cursor: pointer;
+					                }
+					               .reqdoc {
+					                    fill: #bf80ff;
+					                }
+					                .requirement {
+					                    fill: #99ffeb;
+					                }
+					                .function {
+					                    fill: #ff6600;
+					                }
+					                .system {
+					                    fill: #3ca1c3;
+					                }
+					                .part {
+					                    fill: #f5e8f8;
+					                }
+					                .other {
+					                    fill: #f8e8e8;
+					                }
+					                .node-text {
+					                    font-size: 12px;
+					                    font-weight: bold;
+					                }
+					                .node-type {
+					                    font-size: 10px;
+					                    font-weight: bold;
+					                    text-transform: uppercase;
+					                }
+					                .node-details {
+					                    font-size: 10px;
+					                    color: #555;
+					                }
+					                .link {
+					                    fill: none;
+					                    stroke: #ccc;
+					                    stroke-width: 2px;
+					                }
+					                .link-arrow {
+					                    fill: #999;
+					                }
+					                .relationship-label {
+					                    font-size: 10px;
+					                    fill: #666;
+					                }
+					                .foreignObject {
+					                    overflow: visible;
+					                }
+					               .foreignObject div {
+					                    padding: 4px;
+					                    box-sizing: border-box;
+					                    word-wrap: break-word;
+					                    overflow-wrap: break-word;
+					                    white-space: normal;
+					                }
+					                .zoom-controls {
+					                    position: absolute;
+					                    top: 10px;
+					                    right: 10px;
+					                    z-index: 1000;
+					                    background: white;
+					                    padding: 5px;
+					                    border-radius: 4px;
+					                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+					                }
+					                #chart-container {
+					                    position: relative; /* Added this for zoom controls positioning */
+					                }
+					                .zoom-button {
+					                    display: block;
+					                    width: 30px;
+					                    height: 30px;
+					                    margin-bottom: 5px;
+					                    background: white;
+					                    border: 1px solid #ccc;
+					                    border-radius: 3px;
+					                    font-size: 18px;
+					                    cursor: pointer;
+					                    text-align: center;
+					                    line-height: 30px;
+					                }
+					                .zoom-button:hover {
+					                    background: #f0f0f0;
+					                }
+					
+					                .foreignObject {
+					                    overflow: hidden;
+					                }
+					
+					                .node-header {
+					                    font-weight: bold;
+					                    font-size: 9px;
+					                }
+					                .node-footer {
+					                    font-size: 9px;
+					                    color: #555;
+					                }
+					                .node-rect {
+					                    stroke: #111;
+					                    stroke-width: 1.5px;
+					                    rx: 5;
+					                    ry: 5;
+					                }
+					                .hidden {
+					                    display: none;
+					                }
+					    .node-rect.part {
+					fill: #f5e8f8;
+					stroke: #111;
+					}
+					.node-rect.requirement-doc {
+					fill: #bf80ff;
+					stroke: #111;
+					}
+					.node-rect.requirement {
+					fill: #99ffeb;
+					stroke: #111;
+					}
+					.node-rect.re_Requirement {
+					fill: #99ffeb;
+					stroke: #111;
+					}
+					.node-rect.re_Requirement_Document {
+					fill: #bf80ff;
+					stroke: #111;
+					}
+					.node-rect.sys_Function {
+					fill: #ff6600;
+					stroke: #111;
+					}
+					.node-rect.Part {
+					fill: #f5e8f8;
+					stroke: #111;
+					}
+					.node-rect.other {
+					fill: #f8e8e8;
+					stroke: #111;
+					}
+				            </style>
+			        </head>
+			        <style type="text/css" userData="Global">
+				.cellSolid {
+				border-top:1px #000000 solid;
+				border-right:1px #000000 solid;
+				border-bottom:1px #000000 solid;
+				border-left:1px #000000 solid;
+				}
+				.cellSolidTopRight {
+				border-top:1px #000000 solid;
+				border-right:1px #000000 solid;
+				}
+				.cellSolidTopLeft {
+				border-top:1px #000000 solid;
+				border-left:1px #000000 solid;
+				}
+				.cellSolidRightBottom {
+				border-right:1px #000000 solid;
+				border-bottom:1px #000000 solid;
+				}
+				.cellSolidBottomLeft {
+				border-bottom:1px #000000 solid;
+				border-left:1px #000000 solid;
+				}
+				.cellSolidTop {
+				border-top:1px #000000 solid;
+				}
+				.cellSolidRight {
+				border-right:1px #000000 solid;
+				}
+				.cellSolidBottom {
+				border-bottom:1px #000000 solid;
+				}
+				.cellSolidLeft {
+				border-left:1px #000000 solid;
+				}
+				.cellDashed {
+				border-top:1px #666666 dashed;
+				border-right:1px #666666 dashed;
+				border-bottom:1px #666666 dashed;
+				border-left:1px #666666 dashed;
+				}
+				.cellDashedTopRight {
+				border-top:1px #666666 dashed;
+				border-right:1px #666666 dashed;
+				}
+				.cellDashedTopLeft {
+				border-top:1px #666666 dashed;
+				border-left:1px #666666 dashed;
+				}
+				.cellDashedBottomRight {
+				border-bottom:1px #666666 dashed;
+				border-right:1px #666666 dashed;
+				}
+				.cellDashedBottomLeft {
+				border-bottom:1px #666666 dashed;
+				border-left:1px #666666 dashed;
+				}
+				.cellDashedTop {
+				border-top:1px #666666 dashed;
+				}
+				.cellDashedRight {
+				border-right:1px #666666 dashed;
+				}
+				.cellDashedBottom {
+				border-bottom:1px #666666 dashed;
+				}
+				.cellDashedLeft {
+				border-left:1px #666666 dashed;
+				}
+				.cellHeader {
+				background-color:#CCCCCC;
+				border-top:1px #000000 solid;
+				border-right:1px #000000 solid;
+				border-bottom:1px #000000 solid;
+				padding:2px;
+				text-align:center;
+				text-transform:capitalize;
+				text-align:center;
+				font-family:helvetica;
+				font-weight:bold;
+				font-size:8pt;
+				}
+				.cellHeaderVertBT {
+				background-color:#CCCCCC;
+				border-top:1px #000000 solid;
+				border-right:1px #000000 solid;
+				border-bottom:1px #000000 solid;
+				border-left:1px #000000 solid;
+				padding:2px;
+				writing-mode:tb-rl;filter: flipv fliph;
+				text-align:center;
+				text-transform:capitalize;
+				text-align:center;
+				font-family:helvetica;
+				font-weight:bold;
+				font-size:8pt;
+				}
+				.cellHeaderVertTB {
+				background-color:#CCCCCC;
+				border-top:1px #000000 solid;
+				border-right:1px #000000 solid;
+				border-bottom:1px #000000 solid;
+				border-left:1px #000000 solid;
+				padding:2px;
+				writing-mode:tb-rl;filter: flipv flipv;
+				text-align:center;
+				text-transform:capitalize;
+				text-align:center;
+				font-family:helvetica;
+				font-weight:bold;
+				font-size:8pt;
+				}
+			</style>
+			<body>
+				            <div id="dashboard">
+					                <div id="controls">
+						                    <select id="view-selector" onchange="changeView()">
+							<option value="both"/>
+							                        <option value="chart">Chart View</option>
+						<option value="table">Table View</option>
+						                       
+						<option value="both">Both Views</option>
+					</select>
+					                   
+				                </div>
+				
+				                <div id="container">
+					                    <div id="chart-container">
+						                        <div class="zoom-controls">
+							                            <button class="zoom-button" id="zoom-in">+</button>
+							                            <button class="zoom-button" id="zoom-out">-</button>
+							                            <button class="zoom-button" id="zoom-reset">↻</button>
+						                        </div>
+						                        <div id="tree-vis"/>
+					                    </div>
+					                    <div id="table-container" class="hidden">
+						                        <table id="data-table">
+							                            <thead>
+								<tr>
+									  <th>Name</th>
+									  <th>Type</th>
+									  <th>Item Number</th>
+									  <th>Revision</th>
+									  <th>Relationship</th>
+								</tr>
+							  </thead>
+							  <tbody>
+								<!-- Parent Requirement Row -->
+								<tr>
+									  <td>
+										<xsl:value-of select="//Item[@type='re_Requirement']/name"/>
+									</td>
+									  <td>Part</td>
+									  <td>
+										<xsl:value-of select="//Item[@type='re_Requirement']/item_number"/>
+									</td>
+									  <td>
+										<xsl:value-of select="//Item[@type='re_Requirement']/major_rev"/>
+									</td>
+									  <td>-</td>
+								</tr>
+								<!-- Requirement Documents -->
+								<xsl:for-each select="//Item[@type='re_Req_Derived_Documents']">
+									  <tr>
+										<td>
+											<xsl:value-of select="related_id/Item/name"/>
+										</td>
+										<td>
+											  <xsl:choose>
+												<xsl:when test="related_id/Item/@type='re_Requirement_Document'">Requirement Document</xsl:when>
+												<xsl:when test="related_id/Item/@type='Document'">Document</xsl:when>
+												<xsl:otherwise>other</xsl:otherwise>
+											  </xsl:choose>
+										</td>
+										<td>
+											<xsl:value-of select="related_id/Item/item_number"/>
+										</td>
+										<td>
+											<xsl:value-of select="related_id/Item/major_rev"/>
+										</td>
+										<td>Documented by</td>
+									  </tr>
+								</xsl:for-each>
+								<!-- Requirements -->
+								<xsl:for-each select="//Item[@type='sys_Reqt SolutionElement']">
+									  <tr>
+										<td>
+											<xsl:value-of select="related_id/Item/name"/>
+										</td>
+										<td>
+											  <xsl:choose>
+												<xsl:when test="@type='Part'">Part</xsl:when>
+												<xsl:when test="@type='sys_SystemElement'">System Element</xsl:when>
+												                                        <xsl:when test="@type='sys_Function'">Function</xsl:when>
+											  </xsl:choose>
+										</td>
+										<td>
+											<xsl:value-of select="related_id/Item/item_number"/>
+										</td>
+										<td>
+											<xsl:value-of select="related_id/Item/major_rev"/>
+										</td>
+										<td>Satisfied by</td>
+									  </tr>
+								</xsl:for-each>
+								<!-- Requirements -->
+								<xsl:for-each select="//Item[@type='re_Requirement_Out_Link']">
+									  <tr>
+										<td>
+											<xsl:value-of select="related_id/Item/req_title"/>
+										</td>
+										<td>Requirement</td>
+										<td>
+											<xsl:value-of select="related_id/Item/item_number"/>
+										</td>
+										<td>
+											<xsl:value-of select="related_id/Item/major_rev"/>
+										</td>
+										<td>Specified by</td>
+									  </tr>
+								</xsl:for-each>
+								    <!-- Related Items -->
+								                                <xsl:for-each select="//Item[@type='re_Requirement']/relatedItems/Item">
+									                                    <tr>
+										                                        <td>
+											                                            <xsl:choose>
+												                                                <xsl:when test="contains(@keyed_name, ' - ')">
+													                                                    <xsl:value-of select="substring-after(@keyed_name, ' - ')"/>
+												                                                </xsl:when>
+												                                                <xsl:otherwise>
+													                                                    <xsl:value-of select="@keyed_name"/>
+												                                                </xsl:otherwise>
+											                                            </xsl:choose>
+										                                        </td>
+										                                        <td>
+											                                            <xsl:choose>
+												                                                <xsl:when test="@type='Part'">Part</xsl:when>
+												<xsl:when test="@type='sys_System'">System</xsl:when>
+												<xsl:when test="@type='sys_SystemElement'">System Element</xsl:when>
+												<xsl:when test="@type='re_Requirement_Document'">Requirement Document</xsl:when>
+												                                                <xsl:when test="@type='re_Requirement'">Requirement</xsl:when>
+												                                                <xsl:when test="@type='sys_Function'">Function</xsl:when>
+												                                                <xsl:otherwise>Other</xsl:otherwise>
+											                                            </xsl:choose>
+										                                        </td>
+										                                        <td>
+											                                            <xsl:choose>
+												                                                <xsl:when test="contains(@keyed_name, ' - ')">
+													                                                    <xsl:value-of select="substring-before(substring-after(@keyed_name, ' - '), ' - ')"/>
+												                                                </xsl:when>
+												                                                <xsl:otherwise>
+													                                                    <xsl:value-of select="@keyed_name"/>
+												                                                </xsl:otherwise>
+											                                            </xsl:choose>
+										                                        </td>
+										                                        <td>
+											                                            <xsl:choose>
+												                                                <xsl:when test="contains(substring-after(@keyed_name, ' - '), ' - ')">
+													                                                    <xsl:value-of select="substring-after(substring-after(@keyed_name, ' - '), ' - ')"/>
+												                                                </xsl:when>
+												                                                <xsl:otherwise>
+													                                                    -
+												                                                </xsl:otherwise>
+											                                            </xsl:choose>
+										                                        </td>
+										                                        <td>Related to</td>
+									                                    </tr>
+								                                </xsl:for-each>
+							  </tbody>
+						                        </table>
+					                    </div>
+				                </div>
+			</div>
+			           
+			            <script>
+				                // Prepare the data from XML
+				                const xmlData = {
+				                    name: "<xsl:value-of select="//Item[@type='re_Requirement']/req_title"/>
+				",
+				                    type: "requirement",
+				                    typeLabel: "Requirement",
+				                    item_number: "<xsl:value-of select="//Item[@type='re_Requirement']/item_number"/>
+				",
+				                    revision: "<xsl:value-of select="//Item[@type='re_Requirement']/major_rev"/>
+				",
+				                    children: [
+				                        <xsl:for-each select="//Item[@type='re_Req_Derived_Documents']">
+					                        {
+					                            name: "<xsl:value-of select="related_id/Item/name"/>
+					",
+					                            type: "derived-doc",
+					                            typeLabel: "Req Document",
+					                            item_number: "<xsl:value-of select="related_id/Item/item_number"/>
+					",
+					                            revision: "<xsl:value-of select="related_id/Item/major_rev"/>
+					",
+					                            relationship: "Derived by"
+					                        },
+				                        </xsl:for-each>
+				
+				                        <xsl:for-each select="//Item[@type='re_Requirement_Out_Link']">
+					                        {
+					                            name: "<xsl:value-of select="related_id/Item/req_title"/>
+					",
+					                            type: "requirement",
+					                            typeLabel: "Requirement",
+					                            item_number: "<xsl:value-of select="related_id/Item/item_number"/>
+					",
+					                            revision: "<xsl:value-of select="related_id/Item/major_rev"/>
+					",
+					                            relationship: "Specified by"
+					                        },
+				</xsl:for-each>
+				<xsl:for-each select="//Item[@type='sys_Reqt SolutionElement']">
+					                        {
+					                            name: "<xsl:value-of select="related_id/Item/name"/>
+					",
+					                            type: "<xsl:value-of select="@type"/>
+					",
+					                            typeLabel: "<xsl:choose>
+						<xsl:when test="@type='Part'">Part</xsl:when>
+						<xsl:when test="@type='sys_SystemElement'">System Element</xsl:when>
+						<xsl:when test="@type='sys_Function'">Function</xsl:when>
+					</xsl:choose>
+					",
+					                            item_number: "<xsl:value-of select="related_id/Item/item_number"/>
+					",
+					                            revision: "<xsl:value-of select="related_id/Item/major_rev"/>
+					",
+					                            relationship: "Satisfied by"
+					                        },
+				</xsl:for-each>
+				                        <xsl:for-each select="//Item[@type='re_Requirement']/relatedItems/Item">
+					                        {
+					                            name: "<xsl:value-of select="substring-after(@keyed_name, ' - ')"/>
+					",
+					                            type: "<xsl:value-of select="@type"/>
+					",
+					                            typeLabel: "<xsl:choose>
+						<xsl:when test="@type='Part'">Part</xsl:when>
+						<xsl:when test="@type='sys_System'">System</xsl:when>
+						<xsl:when test="@type='sys_SystemElement'">System Element</xsl:when>
+						<xsl:when test="@type='re_Requirement_Document'">Requirement Document</xsl:when>
+						<xsl:when test="@type='re_Requirement'">Requirement</xsl:when>
+						<xsl:when test="@type='sys_Function'">Function</xsl:when>
+					</xsl:choose>
+					",
+					                            item_number: "<xsl:value-of select="substring-before(substring-after(@keyed_name, ' - '), ' - ')"/>
+					",
+					                            revision: "<xsl:value-of select="substring-after(substring-after(@keyed_name, ' - '), ' - ')"/>
+					",
+					                            relationship: "Related to"
+					                        }<xsl:if test="position() != last()">,</xsl:if>
+				                        </xsl:for-each>
+				                    ]
+				};
+				                // Initialize views when DOM is loaded
+				                document.addEventListener('DOMContentLoaded', function() {
+				                    renderTreeChart(xmlData);
+				                    renderDataTable(xmlData);
+				                });
+				                // View selector handler
+				                function changeView() {
+				                    const view = document.getElementById('view-selector').value;
+				                    const chartContainer = document.getElementById('chart-container');
+				                    const tableContainer = document.getElementById('table-container');
+				
+				                    chartContainer.classList.toggle('hidden', view === 'table');
+				                    tableContainer.classList.toggle('hidden', view === 'chart');
+				
+				                    if (view === 'both') {
+				                        chartContainer.style.flex = '1';
+				                        tableContainer.style.flex = '1';
+				                    } else {
+				                        chartContainer.style.flex = view === 'chart' ? '1' : '0';
+				                        tableContainer.style.flex = view === 'table' ? '1' : '0';
+				                    }
+				
+				                    // Redraw chart when showing it to ensure proper rendering
+				                    if (!chartContainer.classList.contains('hidden')) {
+				                        setTimeout(() =&gt; {
+				                            renderTreeChart(xmlData);
+				                        }, 10);
+				                    }
+				                }
+				                // Render data table
+				                function renderDataTable(data) {
+				                    const tableBody = document.querySelector('#data-table tbody');
+				                    tableBody.innerHTML = '';
+				
+				                    // Add main part
+				                    const mainRow = document.createElement('tr');
+				                    mainRow.innerHTML = `
+				                        <td>${data.name}</td>
+				                        <td>${data.typeLabel}</td>
+				                        <td>${data.item_number}</td>
+				                        <td>${data.revision}</td>
+				                        <td>-</td>
+				                    `;
+				                    tableBody.appendChild(mainRow);
+				
+				                    // Add children
+				                    data.children.forEach(child =&gt; {
+				                        const row = document.createElement('tr');
+				                        row.innerHTML = `
+				                            <td>${child.name}</td>
+				                            <td>${child.typeLabel}</td>
+				                            <td>${child.item_number}</td>
+				                            <td>${child.revision}</td>
+				                            <td>${child.relationship}</td>
+				                        `;
+				                        tableBody.appendChild(row);
+				                    });
+				                }
+				                // Render tree chart
+				                function renderTreeChart(data) {
+				                    const treeVis = document.getElementById('tree-vis');
+				                    treeVis.innerHTML = '';
+				
+				                    // Set up the visualization
+				                    const margin = {top: 40, right: 120, bottom: 40, left: 120};
+				                    const width = treeVis.clientWidth - margin.left - margin.right;
+				                    const height = treeVis.clientHeight - margin.top - margin.bottom;
+				                    // Create the SVG container with zoomable group
+				                    const svg = d3.select("#tree-vis")
+				                        .append("svg")
+				                        .attr("width", "100%")
+				                        .attr("height", "100%")
+				                        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+				                        .call(d3.zoom()
+				                            .scaleExtent([0.1, 4])
+				                            .on("zoom", (event) =&gt; {
+				                                g.attr("transform", event.transform);
+				                            }))
+				                        .append("g")
+				                        .attr("class", "zoomable-group");
+				                    const g = svg.append("g")
+				                        .attr("transform", `translate(${margin.left},${margin.top})`);
+				                    // Create the tree layout
+				                    const treeLayout = d3.tree().size([width, height]);
+				                    const root = d3.hierarchy(data);
+				                    const treeData = treeLayout(root);
+				                    // Draw the links
+				                    g.selectAll(".link")
+				                        .data(treeData.links())
+				                        .enter()
+				                        .append("path")
+				                        .attr("class", "link")
+				                        .attr("d", d3.linkVertical()
+				                            .x(d =&gt; d.x)
+				                            .y(d =&gt; d.y))
+				                        .attr("marker-end", "url(#arrowhead)");
+				                    // Add arrows to links
+				                    svg.append("defs").append("marker")
+				                        .attr("id", "arrowhead")
+				                        .attr("viewBox", "0 -5 10 10")
+				                        .attr("refX", 15)
+				                        .attr("refY", 0)
+				                        .attr("markerWidth", 6)
+				                        .attr("markerHeight", 6)
+				                        .attr("orient", "auto")
+				                        .append("path")
+				                        .attr("d", "M0,-5L10,0L0,5")
+				                        .attr("class", "link-arrow");
+				                // Create node groups with proper dimensions
+				                const node = g.selectAll(".node")
+				                    .data(treeData.descendants())
+				                    .enter()
+				                    .append("g")
+				                    .attr("class", "node")
+				                    .attr("transform", d =&gt; `translate(${d.x},${d.y})`);
+				                // Add rectangles for nodes with calculated dimensions
+				                node.append("rect")
+				.attr("class", d =&gt; `node-rect ${d.data.type.replace(/\s+/g, '_')} ${d.data.typeLabel.replace(/\s+/g, '_')}`)
+				.attr("width", 210)
+				.attr("height", 90)
+				.attr("x", -80)
+				.attr("y", -50);
+				                // Add type label above the node
+				                node.append("text")
+				                    .attr("class", "node-type")
+				                    .attr("dy", -30)
+				                    .text(d =&gt; d.data.typeLabel);
+				                // Add foreignObject with proper dimensions and overflow handling
+				                const fo = node.append("foreignObject")
+				                    .attr("class", "foreignObject")
+				.attr("width", 170)
+				                    .attr("height", 75)
+				.attr("x", -85)    
+				                    .attr("y", -20);
+				                // Add content with proper text handling
+				                fo.append("xhtml:div")
+				                    .attr("class", "node-content")
+				                    .html(d =&gt; `
+				                        <div class="node-header" title="${d.data.name}">${d.data.name}</div>
+				                        <div class="node-footer" title="${d.data.item_number} (Rev ${d.data.revision})">
+					                            ${d.data.item_number} (Rev ${d.data.revision})
+				                        </div>
+				                    `);
+				                    // Add relationship labels
+				                    g.selectAll(".relationship-label")
+				                        .data(treeData.links())
+				                        .enter()
+				                        .append("text")
+				                        .attr("class", "relationship-label")
+				                        .attr("x", d =&gt; (d.source.x + d.target.x) / 2)
+				                        .attr("y", d =&gt; (d.source.y + d.target.y) / 2)
+				                        .text(d =&gt; d.target.data.relationship);
+				                    // Zoom controls
+				                    const zoom = d3.zoom()
+				                        .scaleExtent([0.1, 4])
+				                        .on("zoom", (event) =&gt; {
+				                            g.attr("transform", event.transform);
+				                        });
+				                    svg.call(zoom);
+				                    // Zoom button handlers
+				                    d3.select("#zoom-in").on("click", () =&gt; {
+				                        svg.transition().call(zoom.scaleBy, 1.2);
+				                    });
+				                    d3.select("#zoom-out").on("click", () =&gt; {
+				                        svg.transition().call(zoom.scaleBy, 0.8);
+				                    });
+				                    d3.select("#zoom-reset").on("click", () =&gt; {
+				                        svg.transition().call(zoom.transform, d3.zoomIdentity);
+				                    });
+				                }
+			            </script>
+		        </body>
+	        </html>
+    </xsl:template>
+</xsl:stylesheet>

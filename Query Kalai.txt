@@ -1,0 +1,185 @@
+Query Kalai
+
+<Result>
+  <Item alias="re_Requirement">
+    <id keyed_name="REQ-000000381 Dummy Req">A2BFE984E2EC443FBFBB9C72636D098F</id>
+    <major_rev>A</major_rev>
+    <item_number>REQ-000000381</item_number>
+    <req_title>Dummy Req</req_title>
+    <Relationships>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_Function">
+                <major_rev>A</major_rev>
+                <item_number>FN-00000001</item_number>
+                <name>Trending</name>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_SystemElement">
+                <major_rev>A</major_rev>
+                <item_number>SE-00000015</item_number>
+                <name>HMI</name>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="Part">
+                <major_rev>A</major_rev>
+                <name>GeneratorControl</name>
+                <item_number>GENC</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Derived_Documents">
+        <Relationships>
+          <Item alias="Derived Documents">
+            <Relationships>
+              <Item alias="Document">
+                <major_rev>A</major_rev>
+                <name>RD-00020-Rev-A.pdf</name>
+                <item_number>RD-00020-DOC</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Derived_Documents">
+        <Relationships>
+          <Item alias="Derived Documents">
+            <Relationships>
+              <Item alias="re_Requirement_Document">
+                <major_rev>A</major_rev>
+                <item_number>RD-00002</item_number>
+                <reqdoc_title>MIAS Architecture</reqdoc_title>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Realization_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000004 Use case : Show and acknowledge alarm">FC4004266FA04AA680AD930AEBC57BE4</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000004</item_number>
+            <req_title>Use case : Show and acknowledge alarm</req_title>
+            <Relationships>
+              <Item alias="sys_Reqt SolutionElement">
+                <Relationships>
+                  <Item alias="sys_SolutionElement">
+                    <Relationships>
+                      <Item alias="sys_Function">
+                        <major_rev>A</major_rev>
+                        <item_number>FN-00000005</item_number>
+                        <name>User Admin</name>
+                      </Item>
+                    </Relationships>
+                  </Item>
+                </Relationships>
+              </Item>
+              <Item alias="sys_Reqt SolutionElement">
+                <Relationships>
+                  <Item alias="sys_SolutionElement">
+                    <Relationships>
+                      <Item alias="sys_SystemElement">
+                        <major_rev>A</major_rev>
+                        <item_number>SE-00000005</item_number>
+                        <name>Codesys</name>
+                      </Item>
+                    </Relationships>
+                  </Item>
+                </Relationships>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Realization_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000005 Acknowledge alarm">E2F6997768EF45A3A65EC99B69864BED</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000005</item_number>
+            <req_title>Acknowledge alarm</req_title>
+            <Relationships>
+              <Item alias="re_Req_Realization_Link">
+                <Relationships>
+                  <Item alias="re_Requirement">
+                    <id keyed_name="REQ-000000006 Context">667046C4F14A4265ADBFC70C4A176C16</id>
+                    <major_rev>A</major_rev>
+                    <item_number>REQ-000000006</item_number>
+                    <req_title>Context</req_title>
+                    <Relationships>
+                      <Item alias="re_Req_Realization_Link">
+                        <Relationships>
+                          <Item alias="re_Requirement">
+                            <id keyed_name="REQ-000000007 Purpose">DBCB49555F854CA9B4416F1B9FEEC03B</id>
+                            <major_rev>A</major_rev>
+                            <item_number>REQ-000000007</item_number>
+                            <req_title>Purpose</req_title>
+                          </Item>
+                        </Relationships>
+                      </Item>
+                    </Relationships>
+                  </Item>
+                </Relationships>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000002 Show Alarm">0DFC4BE70F66431BA35C145D6641FEAE</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000002</item_number>
+            <req_title>Show Alarm</req_title>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Interface_Requirements">
+        <Relationships>
+          <Item alias="sys_Interface">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Part_Requirement related_id">
+        <Relationships>
+          <Item alias="Part_1">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+            <item_number>DummyPart</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Part_Requirement related_id">
+        <Relationships>
+          <Item alias="Part_1">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+            <item_number>DummyPart</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+    </Relationships>
+  </Item>
+</Result>

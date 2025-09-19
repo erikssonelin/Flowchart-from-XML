@@ -13,7 +13,6 @@
           Arial;
       }
 
-      /* Chart container styling */
       #chart {
         width: 100%;
         height: 100vh;
@@ -22,7 +21,6 @@
         overflow: hidden;
       }
 
-      /* Node rectangle styling */
       .node-rect {
         fill: #fff;
         stroke-width: 1.5;
@@ -39,19 +37,12 @@
         cursor: pointer;
       }
 
-      /* Node content styling */
       .node-content {
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-      }
-
-      .node-info {
-        font-size: 12px;
-        text-align: center;
-        margin-bottom: 12px;
       }
 
       .node-title {
@@ -61,7 +52,13 @@
         margin-bottom: 8px;
       }
 
-      /* Item number and revision styling */
+      .node-type {
+        font-size: 12px;
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
       .node-details {
         font-size: 12px;
         text-align: center;
@@ -75,7 +72,6 @@
         font-weight: 400;
       }
 
-      /* Table for item number and revision */
       .info-table {
         width: 100%;
         border-collapse: collapse;
@@ -87,7 +83,6 @@
         padding: 2px;
       }
 
-      /* Link/connection line styling */
       .link {
         fill: none;
         stroke: #666;
@@ -98,7 +93,6 @@
         stroke-width: 2;
       }
 
-      /* Hint box styling (bottom left) */
       .hint {
         position: fixed;
         left: 12px;
@@ -111,7 +105,6 @@
         z-index: 100;
       }
 
-      /* Expand/collapse indicator */
       .edge-dots {
         pointer-events: none;
       }
@@ -133,23 +126,6 @@
         pointer-events: none;
       }
 
-      /* Highlighted node */
-      .node-highlighted .node-rect {
-        stroke-width: 3px;
-      }
-
-      /* Faded node */
-      .node-faded {
-        opacity: 0.3;
-      }
-
-      /* Link highlight */
-      .link-highlighted {
-        stroke: #e63946;
-        stroke-width: 2.5;
-      }
-
-      /* Controls styling */
       .controls {
         position: absolute;
         top: 15px;
@@ -172,6 +148,13 @@
       .controls button:hover {
         background: #f5f5f5;
       }
+
+      /* 🔹 NEW: Relationship label styling */
+      .rel-label {
+        font-size: 12px;
+        fill: #444;
+        text-anchor: middle;
+      }
     </style>
   </head>
   <body>
@@ -186,276 +169,317 @@
       Click a box to expand or collapse its sub-items. Drag to pan and scroll to
       zoom.
     </div>
-    <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-      const xmlString = `<Result>
-              <Item alias="re_Requirement">
-                <id keyed_name="REQ-000000381 Dummy Req">A2BFE984E2EC443FBFBB9C72636D098F</id>
+      const xmlString = `<Result> Query Kalai
+
+<Result>
+  <Item alias="re_Requirement">
+    <id keyed_name="REQ-000000381 Dummy Req">A2BFE984E2EC443FBFBB9C72636D098F</id>
+    <major_rev>A</major_rev>
+    <item_number>REQ-000000381</item_number>
+    <req_title>Dummy Req</req_title>
+    <Relationships>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_Function">
                 <major_rev>A</major_rev>
-                <item_number>REQ-000000381</item_number>
-                <req_title>Dummy Req</req_title>
+                <item_number>FN-00000001</item_number>
+                <name>Trending</name>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="sys_SystemElement">
+                <major_rev>A</major_rev>
+                <item_number>SE-00000015</item_number>
+                <name>HMI</name>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Reqt SolutionElement">
+        <Relationships>
+          <Item alias="sys_SolutionElement">
+            <Relationships>
+              <Item alias="Part">
+                <major_rev>A</major_rev>
+                <name>GeneratorControl</name>
+                <item_number>GENC</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Derived_Documents">
+        <Relationships>
+          <Item alias="Derived Documents">
+            <Relationships>
+              <Item alias="Document">
+                <major_rev>A</major_rev>
+                <name>RD-00020-Rev-A.pdf</name>
+                <item_number>RD-00020-DOC</item_number>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Derived_Documents">
+        <Relationships>
+          <Item alias="Derived Documents">
+            <Relationships>
+              <Item alias="re_Requirement_Document">
+                <major_rev>A</major_rev>
+                <item_number>RD-00002</item_number>
+                <reqdoc_title>MIAS Architecture</reqdoc_title>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Realization_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000004 Use case : Show and acknowledge alarm">FC4004266FA04AA680AD930AEBC57BE4</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000004</item_number>
+            <req_title>Use case : Show and acknowledge alarm</req_title>
+            <Relationships>
+              <Item alias="sys_Reqt SolutionElement">
                 <Relationships>
-                  <Item alias="sys_Reqt SolutionElement">
+                  <Item alias="sys_SolutionElement">
                     <Relationships>
-                      <Item alias="sys_SolutionElement">
-                        <Relationships>
-                          <Item alias="sys_Function">
-                            <major_rev>A</major_rev>
-                            <item_number>FN-00000001</item_number>
-                            <name>Trending</name>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="sys_Reqt SolutionElement">
-                    <Relationships>
-                      <Item alias="sys_SolutionElement">
-                        <Relationships>
-                          <Item alias="sys_SystemElement">
-                            <major_rev>A</major_rev>
-                            <item_number>SE-00000015</item_number>
-                            <name>HMI</name>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="sys_Reqt SolutionElement">
-                    <Relationships>
-                      <Item alias="sys_SolutionElement">
-                        <Relationships>
-                          <Item alias="Part">
-                            <major_rev>A</major_rev>
-                            <name>GeneratorControl</name>
-                            <item_number>GENC</item_number>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Req_Derived_Documents">
-                    <Relationships>
-                      <Item alias="Derived Documents">
-                        <Relationships>
-                          <Item alias="Document">
-                            <major_rev>A</major_rev>
-                            <name>RD-00020-Rev-A.pdf</name>
-                            <item_number>RD-00020-DOC</item_number>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Req_Derived_Documents">
-                    <Relationships>
-                      <Item alias="Derived Documents">
-                        <Relationships>
-                          <Item alias="re_Requirement_Document">
-                            <major_rev>A</major_rev>
-                            <item_number>RD-00002</item_number>
-                            <reqdoc_title>MIAS Architecture</reqdoc_title>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Req_Realization_Link">
-                    <Relationships>
-                      <Item alias="re_Requirement">
-                        <id keyed_name="REQ-000000004 Use case : Show and acknowledge alarm">FC4004266FA04AA680AD930AEBC57BE4</id>
+                      <Item alias="sys_Function">
                         <major_rev>A</major_rev>
-                        <item_number>REQ-000000004</item_number>
-                        <req_title>Use case : Show and acknowledge alarm</req_title>
-                        <Relationships>
-                          <Item alias="sys_Reqt SolutionElement">
-                            <Relationships>
-                              <Item alias="sys_SolutionElement">
-                                <Relationships>
-                                  <Item alias="sys_Function">
-                                    <major_rev>A</major_rev>
-                                    <item_number>FN-00000005</item_number>
-                                    <name>User Admin</name>
-                                  </Item>
-                                </Relationships>
-                              </Item>
-                            </Relationships>
-                          </Item>
-                          <Item alias="sys_Reqt SolutionElement">
-                            <Relationships>
-                              <Item alias="sys_SolutionElement">
-                                <Relationships>
-                                  <Item alias="sys_SystemElement">
-                                    <major_rev>A</major_rev>
-                                    <item_number>SE-00000005</item_number>
-                                    <name>Codesys</name>
-                                  </Item>
-                                </Relationships>
-                              </Item>
-                            </Relationships>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Req_Realization_Link">
-                    <Relationships>
-                      <Item alias="re_Requirement">
-                        <id keyed_name="REQ-000000005 Acknowledge alarm">E2F6997768EF45A3A65EC99B69864BED</id>
-                        <major_rev>A</major_rev>
-                        <item_number>REQ-000000005</item_number>
-                        <req_title>Acknowledge alarm</req_title>
-                        <Relationships>
-                          <Item alias="re_Req_Realization_Link">
-                            <Relationships>
-                              <Item alias="re_Requirement">
-                                <id keyed_name="REQ-000000006 Context">667046C4F14A4265ADBFC70C4A176C16</id>
-                                <major_rev>A</major_rev>
-                                <item_number>REQ-000000006</item_number>
-                                <req_title>Context</req_title>
-                                <Relationships>
-                                  <Item alias="re_Req_Realization_Link">
-                                    <Relationships>
-                                      <Item alias="re_Requirement">
-                                        <id keyed_name="REQ-000000007 Purpose">DBCB49555F854CA9B4416F1B9FEEC03B</id>
-                                        <major_rev>A</major_rev>
-                                        <item_number>REQ-000000007</item_number>
-                                        <req_title>Purpose</req_title>
-                                      </Item>
-                                    </Relationships>
-                                  </Item>
-                                </Relationships>
-                              </Item>
-                            </Relationships>
-                          </Item>
-                        </Relationships>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Requirement_Out_Link">
-                    <Relationships>
-                      <Item alias="re_Requirement">
-                        <id keyed_name="REQ-000000002 Show Alarm">0DFC4BE70F66431BA35C145D6641FEAE</id>
-                        <major_rev>A</major_rev>
-                        <item_number>REQ-000000002</item_number>
-                        <req_title>Show Alarm</req_title>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="sys_Interface_Requirements">
-                    <Relationships>
-                      <Item alias="sys_Interface">
-                        <major_rev>A</major_rev>
-                        <name>Test</name>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Part_Requirement related_id">
-                    <Relationships>
-                      <Item alias="Part_1">
-                        <major_rev>A</major_rev>
-                        <name>Test</name>
-                        <item_number>DummyPart</item_number>
-                      </Item>
-                    </Relationships>
-                  </Item>
-                  <Item alias="re_Part_Requirement related_id">
-                    <Relationships>
-                      <Item alias="Part_1">
-                        <major_rev>A</major_rev>
-                        <name>Test</name>
-                        <item_number>DummyPart</item_number>
+                        <item_number>FN-00000005</item_number>
+                        <name>User Admin</name>
                       </Item>
                     </Relationships>
                   </Item>
                 </Relationships>
               </Item>
-            </Result>
-            `;
+              <Item alias="sys_Reqt SolutionElement">
+                <Relationships>
+                  <Item alias="sys_SolutionElement">
+                    <Relationships>
+                      <Item alias="sys_SystemElement">
+                        <major_rev>A</major_rev>
+                        <item_number>SE-00000005</item_number>
+                        <name>Codesys</name>
+                      </Item>
+                    </Relationships>
+                  </Item>
+                </Relationships>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Req_Realization_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000005 Acknowledge alarm">E2F6997768EF45A3A65EC99B69864BED</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000005</item_number>
+            <req_title>Acknowledge alarm</req_title>
+            <Relationships>
+              <Item alias="re_Req_Realization_Link">
+                <Relationships>
+                  <Item alias="re_Requirement">
+                    <id keyed_name="REQ-000000006 Context">667046C4F14A4265ADBFC70C4A176C16</id>
+                    <major_rev>A</major_rev>
+                    <item_number>REQ-000000006</item_number>
+                    <req_title>Context</req_title>
+                    <Relationships>
+                      <Item alias="re_Req_Realization_Link">
+                        <Relationships>
+                          <Item alias="re_Requirement">
+                            <id keyed_name="REQ-000000007 Purpose">DBCB49555F854CA9B4416F1B9FEEC03B</id>
+                            <major_rev>A</major_rev>
+                            <item_number>REQ-000000007</item_number>
+                            <req_title>Purpose</req_title>
+                          </Item>
+                        </Relationships>
+                      </Item>
+                    </Relationships>
+                  </Item>
+                </Relationships>
+              </Item>
+            </Relationships>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Requirement_Out_Link">
+        <Relationships>
+          <Item alias="re_Requirement">
+            <id keyed_name="REQ-000000002 Show Alarm">0DFC4BE70F66431BA35C145D6641FEAE</id>
+            <major_rev>A</major_rev>
+            <item_number>REQ-000000002</item_number>
+            <req_title>Show Alarm</req_title>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="sys_Interface_Requirements">
+        <Relationships>
+          <Item alias="sys_Interface">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Part_Requirement related_id">
+        <Relationships>
+          <Item alias="Part_1">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+            <item_number>DummyPart</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+      <Item alias="re_Part_Requirement related_id">
+        <Relationships>
+          <Item alias="Part_1">
+            <major_rev>A</major_rev>
+            <name>Test</name>
+            <item_number>DummyPart</item_number>
+          </Item>
+        </Relationships>
+      </Item>
+    </Relationships>
+  </Item>
+</Result>
+ </Result>`;
 
-      // Parse XML string
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
-      function extractItems(node, parent = null, visitedIds = new Set()) {
+      // 🔹 NEW: map aliases to relationship names
+      const relationshipMap = {
+        "sys_Reqt SolutionElement": "Satisfied by",
+        re_Req_Derived_Documents: "Derived by",
+        re_Req_Realization_Link: "Realized by",
+        re_Requirement_Out_Link: "Specified by",
+        sys_Interface_Requirements: "Interface requirement",
+        "re_Part_Requirement related_id": "Part requirement",
+      };
+
+      // 🔹 NEW: map item aliases to readable type names
+      const typeMap = {
+        Part_1: "Part",
+        re_Requirement: "Requirement",
+        re_Requirement_Document: "Requirement Document",
+        sys_Function: "Function",
+        sys_SystemElement: "System Element",
+        sys_SolutionElement: "Solution Element",
+        sys_Interface: "Interface",
+      };
+
+      const colorPalette = [
+        "#3c91e6", // Blue
+        "#f18f01", // Orange
+        "#e63946", // Red
+        "#6a994e", // Green
+        "#9c6ade", // Purple
+        "#7400b8", // Dark purple
+      ];
+
+      const colorMap = {};
+      let i = 0;
+      for (const type of Object.values(typeMap)) {
+        colorMap[type] = colorPalette[i % colorPalette.length];
+        i++;
+      }
+
+      function extractItems(
+        node,
+        parent = null,
+        visitedIds = new Set(),
+        relationshipType = null
+      ) {
         const items = [];
 
-        // Check if this is an actual item with an item_number
-        const itemNumberNode = node.querySelector("item_number");
+        // create currentItem only if this node has an item_number
+        const itemNumberNode = node.querySelector(":scope > item_number");
+        let currentItem = null;
+
         if (itemNumberNode) {
-          const itemId = itemNumberNode.textContent;
+          const itemId = itemNumberNode.textContent.trim();
           if (visitedIds.has(itemId)) return items;
           visitedIds.add(itemId);
 
-          // Get the best display name based on priority
+          // build display name by priority
           let displayName = "";
-
-          // Priority 1: name
-          const nameNode = node.querySelector("name");
-          if (nameNode && nameNode.textContent) {
+          const nameNode = node.querySelector(":scope > name");
+          if (nameNode && nameNode.textContent)
             displayName = nameNode.textContent;
-          }
-
-          // Priority 2: req_title
           if (!displayName) {
-            const reqTitleNode = node.querySelector("req_title");
-            if (reqTitleNode && reqTitleNode.textContent) {
+            const reqTitleNode = node.querySelector(":scope > req_title");
+            if (reqTitleNode && reqTitleNode.textContent)
               displayName = reqTitleNode.textContent;
-            }
           }
-
-          // Priority 3: reqdoc_title
           if (!displayName) {
-            const reqDocTitleNode = node.querySelector("reqdoc_title");
-            if (reqDocTitleNode && reqDocTitleNode.textContent) {
+            const reqDocTitleNode = node.querySelector(":scope > reqdoc_title");
+            if (reqDocTitleNode && reqDocTitleNode.textContent)
               displayName = reqDocTitleNode.textContent;
-            }
           }
-
-          // Priority 4: id keyed_name
           if (!displayName) {
-            const idNode = node.querySelector("id");
-            if (idNode && idNode.getAttribute("keyed_name")) {
+            const idNode = node.querySelector(":scope > id");
+            if (idNode && idNode.getAttribute("keyed_name"))
               displayName = idNode.getAttribute("keyed_name");
-            }
           }
+          if (!displayName) displayName = itemId;
 
-          // Priority 5: item_number as fallback
-          if (!displayName) {
-            displayName = itemId;
-          }
+          const revisionNode = node.querySelector(":scope > major_rev");
 
-          const revisionNode = node.querySelector("major_rev");
-
-          // Create the item
-          const item = {
+          // store the relationship label (if relationshipType is a known alias, you can map it)
+          currentItem = {
             id: itemId,
             keyed_name: displayName,
             item_number: itemId,
             revision: revisionNode ? revisionNode.textContent : "",
             parent: parent,
             children: [],
+            // relationshipType is *inherited* from the relationship wrapper (see recursion below)
+            relationship:
+              relationshipMap[relationshipType] || relationshipType || null,
+            type:
+              typeMap[node.getAttribute("alias")] ||
+              node.getAttribute("alias") ||
+              "",
           };
 
-          items.push(item);
+          items.push(currentItem);
         }
 
-        // Process relationships recursively
-        const relationshipSections = node.querySelectorAll("Relationships");
+        // recurse into relationship sections; pass down the first alias encountered
+        const relationshipSections = node.querySelectorAll(
+          ":scope > Relationships"
+        );
         relationshipSections.forEach((relSection) => {
           const relationshipItems =
             relSection.querySelectorAll(":scope > Item");
           relationshipItems.forEach((relItem) => {
+            const alias = relItem.getAttribute("alias");
+            // IMPORTANT: preserve an already-provided relationshipType (the wrapper)
+            // so deeper nodes inherit the wrapper alias instead of their own alias.
+            const effectiveRel = relationshipType || alias;
             const childItems = extractItems(
               relItem,
-              items.length > 0 ? items[0] : parent,
-              visitedIds
+              currentItem || parent,
+              visitedIds,
+              effectiveRel // <-- pass inherited alias down the chain
             );
 
-            // If we found an item at this level, connect children to it
-            if (items.length > 0 && childItems.length > 0) {
-              items[0].children.push(...childItems);
+            if (currentItem && childItems.length > 0) {
+              currentItem.children.push(...childItems);
             } else {
               items.push(...childItems);
             }
@@ -465,24 +489,20 @@
         return items;
       }
 
-      // Build root hierarchy from the top-level <Item>
       const rootItem = xmlDoc.querySelector("Result > Item");
       const items = extractItems(rootItem);
       const data = items[0];
 
-      // Chart configuration constants
       const nodeWidth = 300;
       const nodeHeight = 140;
       const nodePaddingX = 10;
       const nodePaddingY = 10;
       const margin = { top: 40, right: 80, bottom: 40, left: 80 };
 
-      // Select chart container and calculate dimensions
       const container = d3.select("#chart");
       const width = container.node().clientWidth - margin.left - margin.right;
       const height = container.node().clientHeight - margin.top - margin.bottom;
 
-      // Create SVG container with zoom capabilities
       const svg = container
         .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -496,38 +516,25 @@
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // Create group for chart elements
       const g = svg.append("g");
 
-      // Create D3 hierarchy from parsed data
       const root = d3.hierarchy(data);
       root.x0 = height / 2;
       root.y0 = 0;
 
-      // Configure tree layout
       const tree = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 80]);
 
-      // Store the current transform for reset functionality
-      let currentTransform = d3.zoomIdentity;
-
-      // Main update function that handles rendering of nodes and links
       function update(source) {
         const treeData = tree(root);
         const nodes = treeData.descendants();
         const links = treeData.links();
 
-        // Normalize for fixed-depth spacing
         nodes.forEach((d) => {
           d.y = d.depth * (nodeWidth + 80);
         });
 
-        // NODES
-        const marginY = 14;
-
-        // Bind nodes to DOM elements
         const node = g.selectAll("g.node").data(nodes, (d) => d.data.id);
 
-        // Enter selection: create new nodes
         const nodeEnter = node
           .enter()
           .append("g")
@@ -543,7 +550,6 @@
             update(d);
           });
 
-        // Rectangle background for nodes
         nodeEnter
           .append("rect")
           .attr(
@@ -558,9 +564,10 @@
           .attr("y", -nodeHeight / 2)
           .style("stroke", "#666")
           .style("stroke-width", 1.5)
-          .style("fill", "#fff");
+          .style("stroke", (d) =>
+            d.depth === 0 ? "#666" : colorMap[d.data.type] || "#666"
+          );
 
-        // Foreign object for the node content
         const fo = nodeEnter
           .append("foreignObject")
           .attr("x", -nodeWidth / 2 + nodePaddingX)
@@ -568,24 +575,26 @@
           .attr("width", nodeWidth - nodePaddingX * 2)
           .attr("height", nodeHeight - nodePaddingY * 2);
 
-        // Create a div for the node content
         const nodeContent = fo
           .append("xhtml:div")
           .attr("class", "node-content");
 
-        // Add the keyed_name (centered)
+        nodeContent
+          .append("div")
+          .attr("class", "node-type")
+          .style("font-size", "12px")
+          .style("margin-bottom", "4px")
+          .text((d) => d.data.type);
+
         nodeContent
           .append("div")
           .attr("class", "node-title")
           .text((d) => d.data.keyed_name);
 
-        // Create a table for item number and revision
         const table = nodeContent.append("table").attr("class", "info-table");
-
         const tbody = table.append("tbody");
         const row = tbody.append("tr");
 
-        // Item Number column
         row
           .append("td")
           .append("div")
@@ -595,7 +604,6 @@
               `<div class="detail-label">Item Number</div><div class="detail-value">${d.data.item_number}</div>`
           );
 
-        // Revision column
         row
           .append("td")
           .append("div")
@@ -607,10 +615,8 @@
               }</div>`
           );
 
-        // Expand/collapse indicator dots
         const dotsGroup = nodeEnter.append("g").attr("class", "edge-dots");
 
-        // Collapse/expand circle - only show on items with children
         dotsGroup
           .append("circle")
           .attr("class", "dot collapse")
@@ -624,7 +630,6 @@
             update(d);
           });
 
-        // Plus/minus symbol inside circle
         dotsGroup
           .append("text")
           .attr("class", "collapse-symbol")
@@ -633,27 +638,22 @@
           .style("display", (d) => (d.children || d._children ? null : "none"))
           .text((d) => (d.children ? "-" : "+"));
 
-        // Merge new nodes with existing ones
         const nodeUpdate = nodeEnter.merge(node);
 
-        // Animate node movement
         nodeUpdate
           .transition()
           .duration(350)
           .attr("transform", (d) => `translate(${d.y},${d.x})`);
 
-        // Update collapse indicator visibility
         nodeUpdate
           .select(".dot.collapse")
           .style("display", (d) => (d.children || d._children ? null : "none"));
 
-        // Update collapse symbol text
         nodeUpdate
           .select(".collapse-symbol")
           .text((d) => (d.children ? "-" : "+"))
           .style("display", (d) => (d.children || d._children ? null : "none"));
 
-        // Exit selection: remove old nodes
         const nodeExit = node.exit();
         nodeExit
           .transition()
@@ -661,12 +661,10 @@
           .attr("transform", `translate(${source.y},${source.x})`)
           .remove();
 
-        // LINKS
         const link = g
           .selectAll("path.link")
           .data(links, (d) => d.target.data.id);
 
-        // Enter selection: create new links
         const linkEnter = link
           .enter()
           .insert("path", "g")
@@ -676,11 +674,9 @@
             return diagonal({ source: o, target: o });
           });
 
-        // Merge new links with existing ones
         const linkUpdate = linkEnter.merge(link);
         linkUpdate.transition().duration(350).attr("d", diagonal);
 
-        // Exit selection: remove old links
         link
           .exit()
           .transition()
@@ -691,20 +687,39 @@
           })
           .remove();
 
-        // Store current positions for future transitions
+        // ---- RELATIONSHIP LABELS ----
+        const linkLabel = g
+          .selectAll("text.link-label")
+          .data(links, (d) => d.target.data.id);
+
+        linkLabel
+          .enter()
+          .append("text")
+          .attr("class", "link-label")
+          .attr("dy", -4)
+          .attr("text-anchor", "middle")
+          .style("font-size", "11px")
+          .style("fill", "#555")
+          .merge(linkLabel)
+          .transition()
+          .duration(350)
+          .attr("x", (d) => (d.source.y + d.target.y) / 2)
+          .attr("y", (d) => (d.source.x + d.target.x) / 2)
+          .text((d) => d.target.data.relationship || "");
+
+        linkLabel.exit().remove();
+
         nodes.forEach((d) => {
           d.x0 = d.x;
           d.y0 = d.y;
         });
       }
 
-      // Diagonal path generator for links (left-to-right orientation)
       const diagonal = d3
         .linkHorizontal()
         .x((d) => d.y)
         .y((d) => d.x);
 
-      // Toggles a node's expanded/collapsed state
       function toggle(d) {
         if (d.children) {
           d._children = d.children;
@@ -715,7 +730,6 @@
         }
       }
 
-      // Expand all nodes
       function expandAll() {
         root.each((d) => {
           if (d._children) {
@@ -726,7 +740,6 @@
         update(root);
       }
 
-      // Collapse all nodes except root
       function collapseAll() {
         root.each((d) => {
           if (d !== root && d.children) {
@@ -737,7 +750,6 @@
         update(root);
       }
 
-      // Reset zoom and pan
       function resetView() {
         svg
           .transition()
@@ -745,17 +757,14 @@
           .call(d3.zoom().transform, d3.zoomIdentity);
       }
 
-      // Initial render of the tree
       update(root);
 
-      // Add button event listeners
       document.getElementById("expandAll").addEventListener("click", expandAll);
       document
         .getElementById("collapseAll")
         .addEventListener("click", collapseAll);
       document.getElementById("resetView").addEventListener("click", resetView);
 
-      // Handle window resize events
       window.addEventListener("resize", () => {
         const newW = container.node().clientWidth - margin.left - margin.right;
         const newH = container.node().clientHeight - margin.top - margin.bottom;
